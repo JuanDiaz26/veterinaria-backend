@@ -2,6 +2,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors'); // Importa cors
 const pacientesRoutes = require('./routes/pacientes'); // Importa las rutas de pacientes
+const bcrypt = require('bcryptjs'); // Asegúrate de importar bcrypt
+
 
 const app = express();
 

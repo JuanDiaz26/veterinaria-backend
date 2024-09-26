@@ -23,6 +23,10 @@ const pacienteSchema = new mongoose.Schema({
     type: String,
     required: true, // Este campo es obligatorio
   },
+  role: { // Agrega este campo
+    type: String,
+    default: 'paciente', // Valor por defecto
+  },
 });
 
 // Crear el modelo de Paciente basado en el esquema
