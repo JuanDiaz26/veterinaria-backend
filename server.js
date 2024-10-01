@@ -2,8 +2,6 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors'); // Importa cors
 const pacientesRoutes = require('./routes/pacientes'); // Importa las rutas de pacientes
-const bcrypt = require('bcryptjs'); // Asegúrate de importar bcrypt
-
 
 const app = express();
 
@@ -11,7 +9,7 @@ const app = express();
 app.use(express.json());
 
 // Middleware para permitir CORS
-app.use(cors()); // Aquí es donde configuras CORS
+app.use(cors()); // Configuración de CORS
 
 // Conexión a MongoDB
 mongoose.connect('mongodb://localhost:27017/veterinaria', {

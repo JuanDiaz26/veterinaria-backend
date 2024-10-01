@@ -1,19 +1,18 @@
 const express = require('express');
 const { check, validationResult } = require('express-validator');
-const bcrypt = require('bcryptjs'); // Asegúrate de importar bcrypt
-const Paciente = require('../models/Paciente'); // Importa tu modelo Paciente
+const bcrypt = require('bcryptjs');
+const Paciente = require('../models/Paciente');
 const router = express.Router();
 
 // Función para crear la cuenta de admin automáticamente
 const crearCuentaAdmin = async () => {
   try {
-    const adminCorreo = 'admin@veterinaria.com'; // Correo del admin predefinido
+    const adminCorreo = 'admin@veterinaria.com';
     let admin = await Paciente.findOne({ correo: adminCorreo });
 
     if (!admin) {
-      // Si el admin no existe, crearlo
       const salt = await bcrypt.genSalt(10);
-      const contraseñaEncriptada = await bcrypt.hash('admin1234', salt); // Contraseña del admin
+      const contraseñaEncriptada = await bcrypt.hash('admin1234', salt);
 
       admin = new Paciente({
         nombre: 'Admin',
@@ -21,7 +20,7 @@ const crearCuentaAdmin = async () => {
         correo: adminCorreo,
         telefono: '123456789',
         contraseña: contraseñaEncriptada,
-        role: 'admin', // Campo adicional para distinguir al admin
+        role: 'admin',
       });
 
       await admin.save();
@@ -36,6 +35,51 @@ const crearCuentaAdmin = async () => {
 
 // Llama a la función para crear el administrador cuando la app arranca
 crearCuentaAdmin();
+
+// Ruta para registrar pacientes
+router.post(
+  '/registro',
+  [
+    check('nombre', 'El nombre es obligatorio').not().isEmpty(),
+    check('apellido', 'El apellido es obligatorio').not().isEmpty(),
+    check('correo', 'Agrega un correo válido').isEmail(),
+    check('telefono', 'El teléfono es obligatorio').not().isEmpty(),
+    check('contraseña', 'La contraseña es obligatoria').exists(),
+  ],
+  async (req, res) => {
+    const { nombre, apellido, correo, telefono, contraseña } = req.body;
+
+    // Validar los datos de entrada
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    try {
+      let paciente = await Paciente.findOne({ correo });
+      if (paciente) {
+        return res.status(400).json({ msg: 'El paciente ya existe' });
+      }
+
+      const salt = await bcrypt.genSalt(10);
+      const contraseñaEncriptada = await bcrypt.hash(contraseña, salt);
+
+      paciente = new Paciente({
+        nombre,
+        apellido,
+        correo,
+        telefono,
+        contraseña: contraseñaEncriptada,
+      });
+
+      await paciente.save();
+      res.status(201).json({ msg: 'Paciente creado exitosamente' });
+    } catch (error) {
+      console.error('Error al registrar el paciente:', error);
+      res.status(500).send('Error en el servidor');
+    }
+  }
+);
 
 // Ruta de inicio de sesión
 router.post(
@@ -60,14 +104,12 @@ router.post(
         return res.status(400).json({ msg: 'Usuario no encontrado' });
       }
 
-      // Comparar la contraseña encriptada
       const esCorrecta = await bcrypt.compare(contraseña, paciente.contraseña);
 
       if (!esCorrecta) {
         return res.status(400).json({ msg: 'Contraseña incorrecta' });
       }
 
-      // Verificar si es admin
       if (paciente.role === 'admin') {
         return res.json({ msg: 'Inicio de sesión exitoso', tipo: 'admin' });
       }
@@ -79,6 +121,5 @@ router.post(
     }
   }
 );
-
 
 module.exports = router;
